@@ -12,6 +12,8 @@ import org.springframework.http.MediaType;
 import java.io.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 //测试minioSDK
 
@@ -100,6 +102,49 @@ public class MinioTest {
             return baos.toByteArray();
         }
     }
+
+    //将分块文件上传到minio
+    @Test
+    public void uploadChunk()throws Exception{
+        for (int i=0;i<2;i++){
+            UploadObjectArgs uploadObjectArgs = UploadObjectArgs.builder()
+                    .bucket("testbucket")
+                    .object("chunk/"+i)//在根目录创建文件
+//                    .contentType(mimeType)//设置媒体文件类型
+                    .filename("G:/chunk/"+i)
+                    .build();
+
+            //上传文件
+            minioClient.uploadObject(uploadObjectArgs);
+            System.out.println("上传分块"+i+"成功");
+        }
+    }
+
+    //调用minio接口 合并分块
+    @Test
+    public void testMerge()throws Exception{
+
+        //
+        List<ComposeSource> sources = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            //制定分块文件的信息
+            ComposeSource source = ComposeSource.builder().bucket("testbucket").object("chunk/" + i).build();
+            sources.add(source);
+        }
+        //制定合并后的objectname等信息
+        ComposeObjectArgs composeObjectArgs = ComposeObjectArgs.builder()
+                .bucket("testbucket")
+                .object("merge01.MOV")
+                .sources(sources)
+                .build();
+        //合并文件
+        minioClient.composeObject(composeObjectArgs);
+    }
+
+    //批量清理分块文件
+
+
+
 
 
 }

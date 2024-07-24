@@ -2,6 +2,11 @@
 spring:
   application:
     name: media-api
+  servlet:
+    multipart:
+      # 设置传输大小
+      max-file-size: 20MB
+      max-request-size: 20MB
   cloud:
     nacos:
       server-addr: 192.168.101.65:8848

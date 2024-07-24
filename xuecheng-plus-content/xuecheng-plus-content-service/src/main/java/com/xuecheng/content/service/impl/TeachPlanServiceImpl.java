@@ -6,6 +6,7 @@ import com.xuecheng.content.mapper.CourseBaseMapper;
 import com.xuecheng.content.mapper.CourseTeacherMapper;
 import com.xuecheng.content.mapper.TeachplanMapper;
 import com.xuecheng.content.mapper.TeachplanMediaMapper;
+import com.xuecheng.content.model.dto.BindTeachplanMediaDto;
 import com.xuecheng.content.model.dto.CourseTeacherDto;
 import com.xuecheng.content.model.dto.SaveTeachPlanDto;
 import com.xuecheng.content.model.dto.TeachPlanDto;
@@ -34,6 +35,7 @@ public class TeachPlanServiceImpl implements TeachPlanService {
 
     @Autowired
     CourseBaseMapper courseBaseMapper;
+
     @Override
     public List<TeachPlanDto> findTeachPlanTree(Long courseId) {
         List<TeachPlanDto> teachPlanDtos = teachplanMapper.selectTreeNodes(courseId);
@@ -184,5 +186,28 @@ public class TeachPlanServiceImpl implements TeachPlanService {
         }
         //删除教师
         courseTeacherMapper.deleteById(teacherId);
+    }
+    //课程计划和媒资绑定
+    @Override
+    @Transactional
+    public void associationMedia(BindTeachplanMediaDto bindTeachplanMediaDto) {
+        //课程计划id
+        Long teachplanId = bindTeachplanMediaDto.getTeachplanId();
+        Teachplan teachplan = teachplanMapper.selectById(teachplanId);
+        if(teachplan == null){
+            XueChengPlusException.cast("课程计划不存在");
+        }
+
+        //先删除原有记录，根据课程计划id删除他所绑定的媒资信息
+
+        teachplanMediaMapper.delete(new LambdaQueryWrapper<TeachplanMedia>().eq(TeachplanMedia::getTeachplanId,bindTeachplanMediaDto.getTeachplanId()));
+
+        //添加新的记录
+        TeachplanMedia teachplanMedia = new TeachplanMedia();
+        BeanUtils.copyProperties(bindTeachplanMediaDto,teachplanMedia);
+        teachplanMedia.setCourseId(teachplan.getCourseId());
+        teachplanMedia.setMediaFilename(bindTeachplanMediaDto.getFileName());
+
+        teachplanMediaMapper.insert(teachplanMedia);
     }
 }

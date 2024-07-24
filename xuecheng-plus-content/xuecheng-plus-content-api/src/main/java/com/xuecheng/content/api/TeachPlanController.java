@@ -1,9 +1,6 @@
 package com.xuecheng.content.api;
 
-import com.xuecheng.content.model.dto.CourseBaseInfoDto;
-import com.xuecheng.content.model.dto.CourseTeacherDto;
-import com.xuecheng.content.model.dto.SaveTeachPlanDto;
-import com.xuecheng.content.model.dto.TeachPlanDto;
+import com.xuecheng.content.model.dto.*;
 import com.xuecheng.content.model.po.CourseTeacher;
 import com.xuecheng.content.service.TeachPlanService;
 import io.swagger.annotations.Api;
@@ -21,6 +18,7 @@ import java.util.List;
 public class TeachPlanController {
     @Autowired
     TeachPlanService teachPlanService;
+
     //查询课程计划
     @ApiOperation("查询课程计划树形结构")
     @ApiImplicitParam(value = "courseId",name = "课程Id",required = true,dataType = "Long",paramType = "path")
@@ -70,4 +68,11 @@ public class TeachPlanController {
         Long companyId = 1232141425L;
         teachPlanService.deleteCourseTeacher(companyId,courseId,teacherId);
     }
+
+    @ApiOperation(value = "课程计划和媒资信息绑定")
+    @PostMapping("/teachplan/association/media")
+    public void associationMedia(@RequestBody BindTeachplanMediaDto bindTeachplanMediaDto){
+        teachPlanService.associationMedia(bindTeachplanMediaDto);
+    }
+
 }
