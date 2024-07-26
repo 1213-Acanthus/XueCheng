@@ -54,6 +54,9 @@ public class TeachPlanServiceImpl implements TeachPlanService {
             Long parentid = saveTeachPlanDto.getParentid();
             Long courseId = saveTeachPlanDto.getCourseId();
             Integer orderMAX = teachplanMapper.getOrderMAX(parentid, courseId);
+            if(orderMAX == null){
+                orderMAX =0;
+            }
             teachplan.setOrderby(orderMAX+1);
 
             teachplanMapper.insert(teachplan);
