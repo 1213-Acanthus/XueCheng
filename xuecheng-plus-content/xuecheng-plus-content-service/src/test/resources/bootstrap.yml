@@ -4,6 +4,9 @@ spring:
   cloud:
     nacos:
       server-addr: 192.168.101.65:8848
+      discovery:
+        namespace: acan
+        group: xuecheng-plus-project
       config: #配置文件相关配置
         namespace: acan
         group: xuecheng-plus-project

@@ -23,6 +23,7 @@ import io.minio.messages.DeleteObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,7 +57,7 @@ public class MediaFileServiceImpl implements MediaFileService {
     @Autowired
     MediaFileService currentProxy;
     //普通文件桶
-    @Value("${minio.bucket.videofiles}")
+    @Value("${minio.bucket.files}")
     private String files_bucket;
     @Autowired
     MediaProcessMapper mediaProcessMapper;
@@ -89,7 +90,7 @@ public class MediaFileServiceImpl implements MediaFileService {
 
     //上传文件
     @Override
-    public UploadFileResultDto uploadFile(Long companyId, UploadFileParamsDto uploadFileParamsDto, String localFilePath) {
+    public UploadFileResultDto uploadFile(Long companyId, UploadFileParamsDto uploadFileParamsDto, String localFilePath,String objectName) {
         //先得到扩展名
         //文件名
         String filename = uploadFileParamsDto.getFilename();
@@ -101,8 +102,11 @@ public class MediaFileServiceImpl implements MediaFileService {
         String defaultFolderPath = getDefaultFolderPath();
         //拿到文件的md5值
         String fileMd5 = getFileMd5(new File(localFilePath));
-        //拿到objectName
-        String objectName = defaultFolderPath + fileMd5 + extension;
+        if(StringUtils.isEmpty(objectName)){
+            //没有传入objectName就传拼接起来的
+            //拿到objectName
+            objectName = defaultFolderPath + fileMd5 + extension;
+        }
         //上传文件到minio
         boolean result = addMediaFilesToMinIO(localFilePath, files_bucket, objectName, mimeType);
         if (!result) {
