@@ -1,0 +1,6 @@
+### 申请验证码
+POST {{checkcode_host}}/checkcode/pic
+
+### 校验验证码
+POST {{checkcode_host}}/checkcode/verify?key=checkcode:3055bd11a8bd44849a9ff2aaa484500f&code=kcyk
+
