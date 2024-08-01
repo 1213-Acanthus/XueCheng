@@ -211,7 +211,7 @@ public class CoursePublishServiceImpl implements CoursePublishService {
 
     @Override
     public void uploadCourseHtml(Long courseId, File file) {
-        MultipartFile multipartFile = MultipartSupportConfig.getMultipartFile(new File("D:\\test.html"));
+        MultipartFile multipartFile = MultipartSupportConfig.getMultipartFile(file);
         String result = mediaServiceClient.uploadFile(multipartFile, "course/"+courseId+".html");
 
         if(result == null){
@@ -219,6 +219,12 @@ public class CoursePublishServiceImpl implements CoursePublishService {
            XueChengPlusException.cast("上传静态文件过程中存在异常");
         }
 
+    }
+    //根据课程id查询课程发布信息
+    @Override
+    public CoursePublish getCoursePublish(Long courseId) {
+        CoursePublish coursePublish = coursePublishMapper.selectById(courseId);
+        return coursePublish;
     }
 
     private void saveCoursePublishMessage(Long courseId){
