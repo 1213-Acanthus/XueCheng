@@ -23,4 +23,11 @@ public class AuthApplication {
         SpringApplication.run(AuthApplication.class, args);
     }
 
+
+    @Bean
+    RestTemplate restTemplate(){
+        RestTemplate restTemplate = new RestTemplate(new OkHttp3ClientHttpRequestFactory());
+        return  restTemplate;
+    }
+
 }

@@ -31,7 +31,9 @@ public class CourseBaseServiceTests {
         pageParams.setPageNo(1L);
         pageParams.setPageSize(2L);
 
-        PageResult<CourseBase> courseBasePageResult = courseBaseInfoService.queryCourseBaseList(pageParams, queryCourseParamsDto);
+        Long companyId = 1232141425L;
+
+        PageResult<CourseBase> courseBasePageResult = courseBaseInfoService.queryCourseBaseList(companyId,pageParams, queryCourseParamsDto);
         System.out.println(courseBasePageResult);
     }
 
