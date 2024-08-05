@@ -3,11 +3,13 @@ package com.xuecheng.orders.api;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.DefaultAlipayClient;
+import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.api.request.AlipayTradeWapPayRequest;
 import com.xuecheng.base.exception.XueChengPlusException;
 import com.xuecheng.orders.config.AlipayConfig;
 import com.xuecheng.orders.model.dto.AddOrderDto;
 import com.xuecheng.orders.model.dto.PayRecordDto;
+import com.xuecheng.orders.model.dto.PayStatusDto;
 import com.xuecheng.orders.model.po.XcPayRecord;
 import com.xuecheng.orders.service.OrderService;
 import com.xuecheng.orders.util.SecurityUtil;
@@ -26,6 +28,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 //订单相关借口
 @Api(value = "订单支付接口", tags = "订单支付接口")
@@ -99,10 +104,48 @@ public class OrderController {
 
     }
 
-    @PostMapping("/paynotify")
-    public void paynotify(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, AlipayApiException {
+    @ApiOperation("接收支付结果通知")
+    @PostMapping("/receivenotify")
+    public void paynotify(HttpServletRequest request, HttpServletResponse response) throws IOException, AlipayApiException {
+        Map<String, String> params = new HashMap<String, String>();
+        Map requestParams = request.getParameterMap();
+        for (Iterator iter = requestParams.keySet().iterator(); iter.hasNext(); ) {
+            String name = (String) iter.next();
+            String[] values = (String[]) requestParams.get(name);
+            String valueStr = "";
+            for (int i = 0; i < values.length; i++) {
+                valueStr = (i == values.length - 1) ? valueStr + values[i]
+                        : valueStr + values[i] + ",";
+            }
+            //乱码解决，这段代码在出现乱码时使用。如果mysign和sign不相等也可以使用这段代码转化
+            //valueStr = new String(valueStr.getBytes("ISO-8859-1"), "gbk");
+            params.put(name, valueStr);
+        }
+        boolean verify_result = AlipaySignature.rsaCheckV1(params, ALIPAY_PUBLIC_KEY, AlipayConfig.CHARSET, "RSA2");
 
+        if (verify_result) {//验证成功
+            //商户订单号
+            String out_trade_no = new String(request.getParameter("out_trade_no").getBytes("ISO-8859-1"), "UTF-8");
+            //支付宝交易号
+            String trade_no = new String(request.getParameter("trade_no").getBytes("ISO-8859-1"), "UTF-8");
+            //支付宝交易金额
+            String trade_amount = new String(request.getParameter("total_amount").getBytes("ISO-8859-1"), "UTF-8");
+
+            //交易状态
+            String trade_status = new String(request.getParameter("trade_status").getBytes("ISO-8859-1"), "UTF-8");
+            if (trade_status.equals("TRADE_SUCCESS")) {//交易成功
+                //更新支付记录表的支付状态为成功和订单表状态为成功
+                PayStatusDto payStatusDto = new PayStatusDto();
+                payStatusDto.setTrade_status(trade_status);
+                payStatusDto.setTrade_no(trade_no);
+                payStatusDto.setOut_trade_no(out_trade_no);
+                payStatusDto.setTotal_amount(trade_amount);
+                payStatusDto.setApp_id(APP_ID);
+                orderService.saveAliPayStatus(payStatusDto);
+            }
+            response.getWriter().write("success");
+        } else {
+            response.getWriter().write("fail");
+        }
     }
-
-
 }
