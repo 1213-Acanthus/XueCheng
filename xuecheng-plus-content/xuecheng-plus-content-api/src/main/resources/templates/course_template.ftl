@@ -73,11 +73,11 @@
 </div>
 <div class="article-cont">
     <div class="tit-list">
-        <a href="javascript:;" id="articleClass" class="active">课程介绍</a>
-        <a href="javascript:;" id="articleItem">目录</a>
-        <a href="javascript:;" id="artcleAsk">问答</a>
-        <a href="javascript:;" id="artcleNot">笔记</a>
-        <a href="javascript:;" id="artcleCod">评价</a>
+        <a href="javascript:" id="articleClass" class="active">课程介绍</a>
+        <a href="javascript:" id="articleItem">目录</a>
+        <a href="javascript:" id="artcleAsk">问答</a>
+        <a href="javascript:" id="artcleNot">笔记</a>
+        <a href="javascript:" id="artcleCod">评价</a>
         <!--<div class="down-fill">
             <span>资料下载</span>
             <ul>
@@ -180,7 +180,7 @@
                                 <div class="drop-down" style="height: 260px;">
                                     <ul class="list-box">
                                         <#list firstNode.teachPlanTreeNodes as secondNode>
-                                            <li><a href="http://www.51xuecheng.cn/course/preview/learning.html?id=${model.courseBase.id}&chapter=${secondNode.teachplanMedia.teachplanId!''}" target="_blank">${secondNode.pname}</a></li>
+                                            <li><a href="http://www.51xuecheng.cn/course/preview/learning.html?id=${model.courseBase.id!''}&chapter=${secondNode.teachplanMedia.teachplanId!''}" target="_blank">${secondNode.pname!''}</a></li>
                                         </#list>
                                     </ul>
                                 </div>
