@@ -11,7 +11,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xuecheng.base.exception.XueChengPlusException;
 import com.xuecheng.base.utils.IdWorkerUtils;
 import com.xuecheng.base.utils.QRCodeUtil;
+import com.xuecheng.messagesdk.model.po.MqMessage;
+import com.xuecheng.messagesdk.service.MqMessageService;
 import com.xuecheng.orders.config.AlipayConfig;
+import com.xuecheng.orders.config.PayNotifyConfig;
 import com.xuecheng.orders.mapper.XcOrdersGoodsMapper;
 import com.xuecheng.orders.mapper.XcOrdersMapper;
 import com.xuecheng.orders.mapper.XcPayRecordMapper;
@@ -24,6 +27,12 @@ import com.xuecheng.orders.model.po.XcPayRecord;
 import com.xuecheng.orders.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.message.StringFormattedMessage;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageBuilder;
+import org.springframework.amqp.core.MessageBuilderSupport;
+import org.springframework.amqp.core.MessageDeliveryMode;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +58,8 @@ public class OrderServiceImpl implements OrderService {
     @Value("${pay.alipay.ALIPAY_PUBLIC_KEY}")
     String ALIPAY_PUBLIC_KEY;
     @Autowired
+    RabbitTemplate rabbitTemplate;
+    @Autowired
     XcOrdersMapper xcOrdersMapper;
     @Autowired
     XcOrdersGoodsMapper xcOrdersGoodsMapper;
@@ -55,6 +67,8 @@ public class OrderServiceImpl implements OrderService {
     XcPayRecordMapper xcPayRecordMapper;
     @Autowired
     OrderServiceImpl orderService;
+    @Autowired
+    MqMessageService mqMessageService;
     @Value("${pay.qrcodeurl}")
     String qrcodeurl;
 
@@ -180,8 +194,41 @@ public class OrderServiceImpl implements OrderService {
             //更新订单表的状态为支付成功
             xcOrders.setStatus("600002");//订单状态为交易成功
             xcOrdersMapper.updateById(xcOrders);
+
+            //将消息写入数据库
+            MqMessage mqMessage = mqMessageService.addMessage("payresult_notify", xcOrders.getOutBusinessId(), xcOrders.getOrderType(), null);
+            //发送消息
+            notifyPayResult(mqMessage);
         }
 
+    }
+
+    @Override
+    public void notifyPayResult(MqMessage mqMessage) {
+        //消息内容
+        String jsonMessage = JSON.toJSONString(mqMessage);
+        //创建一个持久化消息
+        Message mq = MessageBuilder.withBody(jsonMessage.getBytes(StandardCharsets.UTF_8)).setDeliveryMode(MessageDeliveryMode.PERSISTENT).build();
+        //全局消息id
+        Long id = mqMessage.getId();
+        //使用correlation指定回调方法
+        CorrelationData correlationData = new CorrelationData(id.toString());
+        correlationData.getFuture().addCallback(result->{
+            if (result.isAck()){
+                //消息成功发送到了交换机
+                log.debug("消息发送成功：{}",jsonMessage);
+                //将消息从数据库表删掉
+                mqMessageService.completed(id);
+            }else {
+                //消息发送失败
+                log.debug("消息发送失败：{}",jsonMessage);
+            }
+        },ex->{
+            //发生异常
+            log.debug("消息发送时发生异常：{}",jsonMessage);
+        });
+        //发送消息
+        rabbitTemplate.convertAndSend(PayNotifyConfig.PAYNOTIFY_EXCHANGE_FANOUT,"",mq,correlationData);
     }
 
     //插入订单表 订单主表 和订单明细表
