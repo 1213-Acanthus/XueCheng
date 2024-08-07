@@ -34,6 +34,10 @@ spring:
           - data-id: feign-${spring.profiles.active}.yaml
             group: xuecheng-plus-common
             refresh: true
+          - data-id: redis-${spring.profiles.active}.yaml
+            group: xuecheng-plus-common
+            refresh: true
+
 
   #  datasource:
   #    driver-class-name: com.mysql.cj.jdbc.Driver

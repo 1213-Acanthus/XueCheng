@@ -30,7 +30,7 @@ public class LearnServiceImpl implements LearnService {
         //校验学习资格
 
         //如果登录
-        if(userId.isEmpty()){
+        if(!userId.isEmpty()){
 
             //判断是否选课，根据选课情况判断学习资格
             XcCourseTablesDto xcCourseTablesDto = myCourseTablesService.getLearningStatus(userId, courseId);
